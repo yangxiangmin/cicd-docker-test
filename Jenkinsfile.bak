@@ -1,0 +1,273 @@
+pipeline {
+    agent any
+    
+    environment {
+        // 镜像仓库配置
+        DOCKER_REGISTRY = "harbor.your-company.com"
+        PROJECT_NAME = "your-project"
+        APP_NAME = "demo-app"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"  // 使用构建号作为标签
+        
+        // 完整镜像地址
+        BUILD_IMAGE = "${DOCKER_REGISTRY}/builder-images/${PROJECT_NAME}-builder:latest"
+        APP_IMAGE = "${DOCKER_REGISTRY}/${PROJECT_NAME}/${APP_NAME}:${IMAGE_TAG}"
+        
+        // 凭证ID（在Jenkins凭据中配置）
+        GIT_CREDENTIALS = "git-credentials"
+        DOCKER_CREDENTIALS = "harbor-credentials"
+        K8S_CREDENTIALS = "k8s-cluster-creds"
+        SSH_CREDENTIALS = "prod-server-creds"
+        
+        // 环境配置
+        DEPLOY_NAMESPACE = "production"
+        STAGING_NAMESPACE = "staging"
+    }
+    
+    stages {
+        // 阶段1: 获取源代码
+        stage('Checkout Source Code') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],  // 可根据需要修改分支
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/your-org/your-repo.git',
+                        credentialsId: GIT_CREDENTIALS
+                    ]]
+                ])
+            }
+        }
+        
+        // 阶段2: 拉取构建环境镜像
+        stage('Pull Builder Image') {
+            steps {
+                script {
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIALS) {
+                        docker.image(BUILD_IMAGE).pull()
+                    }
+                }
+            }
+        }
+        
+        // 阶段3: 编译代码
+        stage('Build') {
+            steps {
+                script {
+                    docker.image(BUILD_IMAGE).inside('-v $WORKSPACE:/workspace -w /workspace') {
+                        sh '''
+                            echo "开始编译..."
+                            cd /workspace
+                            make clean
+                            make all
+                            echo "编译完成!"
+                        '''
+                    }
+                }
+            }
+        }
+        
+        // 阶段4: 运行测试
+        stage('Test') {
+            steps {
+                script {
+                    docker.image(BUILD_IMAGE).inside('-v $WORKSPACE:/workspace -w /workspace') {
+                        sh '''
+                            echo "开始运行测试..."
+                            cd /workspace
+                            make test
+                            echo "测试完成!"
+                        '''
+                    }
+                    junit '**/test-results/*.xml'
+                }
+            }
+        }
+        
+        // 阶段5: 构建应用镜像
+        stage('Build Application Image') {
+            steps {
+                script {
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIALS) {
+                        def appImage = docker.build(APP_IMAGE, "--build-arg BUILD_NUMBER=${IMAGE_TAG} .")
+                    }
+                }
+            }
+        }
+        
+        // 阶段6: 推送应用镜像
+        stage('Push Image') {
+            steps {
+                script {
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", DOCKER_CREDENTIALS) {
+                        docker.image(APP_IMAGE).push()
+                        docker.image(APP_IMAGE).push('latest')
+                    }
+                }
+            }
+        }
+        
+        // 阶段7: 安全扫描（可选）
+        stage('Security Scan') {
+            steps {
+                script {
+                    sh "docker scan --file Dockerfile ${APP_IMAGE}"
+                }
+            }
+        }
+        
+        // 阶段8: 部署到测试环境
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop'  // 只在develop分支触发
+            }
+            steps {
+                script {
+                    withKubeConfig([credentialsId: K8S_CREDENTIALS]) {
+                        sh """
+                            kubectl config set-context --current --namespace=${STAGING_NAMESPACE}
+                            kubectl set image deployment/${APP_NAME} ${APP_NAME}=${APP_IMAGE} --record
+                            kubectl rollout status deployment/${APP_NAME} --timeout=300s
+                        """
+                    }
+                }
+            }
+        }
+        
+        // 阶段9: 生产环境审批
+        stage('Production Approval') {
+            when {
+                branch 'main'  // 只在main分支触发
+            }
+            steps {
+                timeout(time: 24, unit: 'HOURS') {
+                    input(
+                        message: '确认部署到生产环境?', 
+                        ok: '确认部署',
+                        submitter: 'devops-team,admin-team',
+                        parameters: [
+                            choice(
+                                name: 'DEPLOY_STRATEGY',
+                                choices: ['rolling-update', 'blue-green', 'canary'],
+                                description: '选择部署策略'
+                            ),
+                            booleanParam(
+                                name: 'RUN_SMOKE_TEST',
+                                defaultValue: true,
+                                description: '部署后是否运行冒烟测试?'
+                            )
+                        ]
+                    )
+                }
+            }
+        }
+        
+        // 阶段10: 部署到生产环境
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+                beforeInput false  // 确保审批后继续执行
+            }
+            steps {
+                script {
+                    // 根据选择的策略部署
+                    if (params.DEPLOY_STRATEGY == 'blue-green') {
+                        // 蓝绿部署逻辑
+                        withKubeConfig([credentialsId: K8S_CREDENTIALS]) {
+                            sh """
+                                kubectl config set-context --current --namespace=${DEPLOY_NAMESPACE}
+                                # 蓝绿部署具体命令
+                                kubectl apply -f kubernetes/production-blue.yaml
+                                kubectl apply -f kubernetes/production-green.yaml
+                                # 切换流量
+                                kubectl patch svc/${APP_NAME} -p '{"spec":{"selector":{"version":"${IMAGE_TAG}"}}}'
+                            """
+                        }
+                    } else {
+                        // 默认滚动更新
+                        withKubeConfig([credentialsId: K8S_CREDENTIALS]) {
+                            sh """
+                                kubectl config set-context --current --namespace=${DEPLOY_NAMESPACE}
+                                kubectl set image deployment/${APP_NAME} ${APP_NAME}=${APP_IMAGE} --record
+                                kubectl rollout status deployment/${APP_NAME} --timeout=600s
+                            """
+                        }
+                    }
+                    
+                    // 如果选择了运行冒烟测试
+                    if (params.RUN_SMOKE_TEST.toBoolean()) {
+                        withKubeConfig([credentialsId: K8S_CREDENTIALS]) {
+                            sh """
+                                kubectl config set-context --current --namespace=${DEPLOY_NAMESPACE}
+                                kubectl run smoke-test --image=${APP_IMAGE} --restart=Never -- /app/smoke-test.sh
+                                kubectl logs -f smoke-test
+                                kubectl delete pod smoke-test
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            // 清理工作空间和Docker资源
+            cleanWs()
+            sh """
+                docker rmi ${APP_IMAGE} || true
+                docker system prune -f
+            """
+            
+            // 构建通知
+            script {
+                def buildStatus = currentBuild.result ?: 'SUCCESS'
+                def color = buildStatus == 'SUCCESS' ? 'good' : 'danger'
+                def message = "构建结果: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${buildStatus}\n" +
+                              "镜像地址: ${APP_IMAGE}\n" +
+                              "构建详情: ${env.BUILD_URL}"
+                
+                if (currentBuild.result == 'SUCCESS' && env.BRANCH_NAME == 'main') {
+                    message += "\n生产环境部署完成! 版本: ${IMAGE_TAG}"
+                }
+                
+                slackSend(color: color, message: message)
+                emailext(
+                    subject: "构建通知: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${buildStatus}",
+                    body: message,
+                    to: 'devops-team@your-company.com'
+                )
+            }
+        }
+        
+        failure {
+            // 失败时自动回滚生产环境
+            script {
+                if (env.BRANCH_NAME == 'main') {
+                    withKubeConfig([credentialsId: K8S_CREDENTIALS]) {
+                        sh """
+                            kubectl config set-context --current --namespace=${DEPLOY_NAMESPACE}
+                            kubectl rollout undo deployment/${APP_NAME}
+                            echo "由于构建失败，已自动回滚生产环境"
+                        """
+                    }
+                }
+            }
+        }
+        
+        regression {
+            // 当构建状态从成功变为失败时的特殊处理
+            script {
+                if (env.BRANCH_NAME == 'main') {
+                    slackSend(
+                        color: 'danger',
+                        message: "警告: 生产环境构建出现回归!\n" +
+                                 "项目: ${env.JOB_NAME}\n" +
+                                 "构建号: ${env.BUILD_NUMBER}\n" +
+                                 "详情: ${env.BUILD_URL}"
+                    )
+                }
+            }
+        }
+    }
+}
