@@ -10,41 +10,21 @@ pipeline {
     }
     
     environment {
-        // 源代码配置（无需认证）
+        // 源代码配置
         REPO_URL = 'https://github.com/yangxiangmin/cicd-docker-test.git'
         BRANCH = 'main'
         
-        // 容器镜像配置
+        // Docker配置
         BUILD_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0'
         APP_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/http-server:${BUILD_NUMBER}'
+        DOCKER_CREDENTIALS = 'docker-registry-creds'
         
         // 构建配置
         BUILD_DIR = 'build'
     }
     
     stages {
-        // 阶段1: 拉取源代码（无需认证）
-        //stage('Checkout') {
-        //    steps {
-        //        script {
-        //            try {
-        //                checkout([
-        //                   $class: 'GitSCM',
-        //                   branches: [[name: env.BRANCH]],
-        //                   userRemoteConfigs: [[
-        //                        url: env.REPO_URL,
-        //                        credentialsId: ''  // 显式声明无需认证
-        //                    ]]
-        //                ])
-        //                echo "✅ 已完成代码检出！"
-        //            } catch (Exception e) {
-        //                error("❌ 代码检出失败: ${e.getMessage()}")
-        //           }
-        //        }
-        //    }
-        //}
-
-        // 阶段1: 拉取源代码 (需要认证)
+        // 阶段1: 拉取源代码
         stage('Checkout') {
             steps {
                 script {
@@ -61,13 +41,15 @@ pipeline {
                 }
             }
         }
-
-        // 阶段2: 拉取编译环境镜像（使用 nerdctl）
+        
+        // 阶段2: 拉取编译环境镜像
         stage('Pull Build Image') {
             steps {
                 script {
                     try {
-                        sh "nerdctl pull ${env.BUILD_IMAGE}"
+                        docker.withRegistry('https://dockhub.ghtchina.com:6060', env.DOCKER_CREDENTIALS) {
+                            docker.image(env.BUILD_IMAGE).pull()
+                        }
                         echo "✅ 已完成编译环境镜像拉取！"
                     } catch (Exception e) {
                         error("❌ 编译环境镜像拉取失败: ${e.getMessage()}")
@@ -76,24 +58,20 @@ pipeline {
             }
         }
         
-        // 阶段3: 容器化编译（使用 nerdctl）
+        // 阶段3: 容器化编译
         stage('Build') {
             steps {
                 script {
                     try {
-                        sh """
-                            nerdctl run --rm \
-                                -v ${env.WORKSPACE}:/workspace \
-                                -w /workspace \
-                                ${env.BUILD_IMAGE} \
-                                /bin/sh -c '
-                                    echo "=== 开始编译 ==="
-                                    mkdir -p ${env.BUILD_DIR} && cd ${env.BUILD_DIR}
-                                    cmake .. -DCMAKE_BUILD_TYPE=Release
-                                    make -j$(nproc)
-                                    echo "=== 编译完成 ==="
-                                '
-                        """
+                        docker.image(env.BUILD_IMAGE).inside("-v ${env.WORKSPACE}:/workspace -w /workspace") {
+                            sh '''
+                                echo "=== 开始编译 ==="
+                                mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
+                                cmake .. -DCMAKE_BUILD_TYPE=Release
+                                make -j$(nproc)
+                                echo "=== 编译完成 ==="
+                            '''
+                        }
                         echo "✅ 已完成容器化编译！"
                     } catch (Exception e) {
                         error("❌ 容器化编译失败: ${e.getMessage()}")
@@ -102,28 +80,24 @@ pipeline {
             }
         }
         
-        // 阶段4: 容器化测试（使用 nerdctl）
+        // 阶段4: 容器化测试
         stage('Test') {
             steps {
                 script {
                     try {
-                        sh """
-                            nerdctl run --rm \
-                                -v ${env.WORKSPACE}:/workspace \
-                                -w /workspace \
-                                ${env.BUILD_IMAGE} \
-                                /bin/sh -c '
-                                    echo "=== 开始测试 ==="
-                                    cd ${env.BUILD_DIR}
-                                    ./http_server &
-                                    SERVER_PID=\$!
-                                    sleep 2
-                                    ctest --output-on-failure
-                                    kill \$SERVER_PID
-                                    echo "=== 测试完成 ==="
-                                '
-                        """
-                        junit 'build/Testing/**/*.xml'
+                        docker.image(env.BUILD_IMAGE).inside("-v ${env.WORKSPACE}:/workspace -w /workspace") {
+                            sh '''
+                                echo "=== 开始测试 ==="
+                                cd ${BUILD_DIR}
+                                ./http_server &
+                                SERVER_PID=$!
+                                sleep 2
+                                ctest --output-on-failure
+                                kill $SERVER_PID
+                                echo "=== 测试完成 ==="
+                            '''
+                        }
+                        junit 'build/Testing/**/*.xml'  // 收集测试报告
                         echo "✅ 已完成容器化测试！"
                     } catch (Exception e) {
                         error("❌ 容器化测试失败: ${e.getMessage()}")
@@ -132,16 +106,14 @@ pipeline {
             }
         }
         
-        // 阶段5: 构建应用镜像（使用 nerdctl）
+        // 阶段5: 构建应用镜像
         stage('Build Image') {
             steps {
                 script {
                     try {
-                        sh """
-                            nerdctl build \
-                                --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} \
-                                -t ${env.APP_IMAGE} .
-                        """
+                        docker.withRegistry('https://dockhub.ghtchina.com:6060', env.DOCKER_CREDENTIALS) {
+                            def appImage = docker.build(env.APP_IMAGE, "--build-arg BUILD_NUMBER=${env.BUILD_NUMBER} .")
+                        }
                         echo "✅ 已完成应用镜像构建！"
                     } catch (Exception e) {
                         error("❌ 应用镜像构建失败: ${e.getMessage()}")
@@ -150,16 +122,15 @@ pipeline {
             }
         }
         
-        // 阶段6: 推送镜像（使用 nerdctl）
+        // 阶段6: 推送镜像
         stage('Push Image') {
             steps {
                 script {
                     try {
-                        sh """
-                            nerdctl push ${env.APP_IMAGE}
-                            nerdctl tag ${env.APP_IMAGE} ${env.APP_IMAGE}:latest
-                            nerdctl push ${env.APP_IMAGE}:latest
-                        """
+                        docker.withRegistry('https://dockhub.ghtchina.com:6060', env.DOCKER_CREDENTIALS) {
+                            docker.image(env.APP_IMAGE).push()
+                            docker.image(env.APP_IMAGE).push('latest')
+                        }
                         echo "✅ 已完成应用镜像推送！"
                     } catch (Exception e) {
                         error("❌ 应用镜像推送失败: ${e.getMessage()}")
@@ -194,7 +165,7 @@ pipeline {
     // 后置处理
     post {
         always {
-            cleanWs()
+            cleanWs()  // 清理工作空间
         }
         success {
             slackSend(
