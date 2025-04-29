@@ -90,7 +90,7 @@ pipeline {
                                     echo "=== 开始编译 ==="
                                     mkdir -p ${env.BUILD_DIR} && cd ${env.BUILD_DIR}
                                     cmake .. -DCMAKE_BUILD_TYPE=Release
-                                    make -j$(nproc)
+                                    make -j\$(nproc)
                                     echo "=== 编译完成 ==="
                                 '
                         """
