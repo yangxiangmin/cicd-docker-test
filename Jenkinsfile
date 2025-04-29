@@ -94,7 +94,7 @@ pipeline {
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
                                     echo "=== 安装编译工具 ==="
-                                    if ! (yum install -y cmake make gcc-c++ 2>/dev/null); then
+                                    if ! (yum install -y cmake make gcc-c++); then
                                         echo "❌ 错误：无法安装 cmake/make/g++，请检查基础镜像是否支持包管理"
                                         exit 1
                                     fi
