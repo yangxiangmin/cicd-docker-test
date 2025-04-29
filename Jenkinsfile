@@ -67,7 +67,13 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh "nerdctl pull ${env.BUILD_IMAGE}"
+                        //sh "nerdctl pull ${env.BUILD_IMAGE}"          // 拉取过程有很多后台输出信息
+
+                        sh "nerdctl pull --quiet ${env.BUILD_IMAGE}"    // 关闭输出信息，需要确保nerdctl 版本支持 --quiet 静默参数
+
+                        // 如果不支持--quiet 静默参数，采用重定向方案
+                        // sh "nerdctl pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
+
                         echo "✅ 已完成编译环境镜像拉取！"
                     } catch (Exception e) {
                         error("❌ 编译环境镜像拉取失败: ${e.getMessage()}")
@@ -75,7 +81,8 @@ pipeline {
                 }
             }
         }
-        
+
+
         // 阶段3: 容器化编译（使用 nerdctl）
         stage('Build') {
             steps {
@@ -87,6 +94,8 @@ pipeline {
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
+                                    echo "=== 安装编译工具 ==="
+                                    yum install -y cmake make gcc-c++
                                     echo "=== 开始编译 ==="
                                     mkdir -p ${env.BUILD_DIR} && cd ${env.BUILD_DIR}
                                     cmake .. -DCMAKE_BUILD_TYPE=Release
