@@ -35,8 +35,8 @@ pipeline {
                     docker.withRegistry('https://dockhub.ghtchina.com:6060', env.DOCKER_CREDENTIALS) {
                         docker.image(env.BUILD_IMAGE).pull()
                     }
+                    echo "✅ 已完成编译环境镜像拉取！"
                 }
-                echo "✅ 已完成编译环境镜像拉取！"
             }
         }
         
