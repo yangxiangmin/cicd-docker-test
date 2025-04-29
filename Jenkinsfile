@@ -93,6 +93,9 @@ pipeline {
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
+                                    echo "=== 替换为华为云镜像源 ==="
+                                    sed -i 's|repo.openeuler.org|mirrors.huaweicloud.com/openeuler|g' /etc/yum.repos.d/openEuler.repo
+                                    
                                     echo "=== 安装编译工具 ==="
                                     if ! (yum install -y cmake make gcc-c++); then
                                         echo "❌ 错误：无法安装 cmake/make/g++，请检查基础镜像是否支持包管理"
