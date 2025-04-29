@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         // 源代码配置
-        REPO_URL = 'https://github.com/yangxiangmin/cicd-test-new.git'
+        REPO_URL = 'https://github.com/yangxiangmin/cicd-docker-test.git'
         BRANCH = 'main'
         
         // Docker配置
