@@ -115,7 +115,7 @@ pipeline {
                 }
             }
         }
-        
+
         // 阶段4: 容器化测试（使用 nerdctl）
         stage('Test') {
             steps {
@@ -145,7 +145,8 @@ pipeline {
                 }
             }
         }
-        
+
+/* //yxmflag
         // 阶段5: 构建应用镜像（使用 nerdctl）
         stage('Build Image') {
             steps {
@@ -203,6 +204,7 @@ pipeline {
                 }
             }
         }
+    */                //yxmflag
     }
     
     // 后置处理
