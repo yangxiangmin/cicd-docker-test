@@ -24,6 +24,7 @@ pipeline {
                     branches: [[name: env.BRANCH]],
                     userRemoteConfigs: [[url: env.REPO_URL]]
                 ])
+                echo "✅ 已完成代码检出！"
             }
         }
         
@@ -35,6 +36,7 @@ pipeline {
                         docker.image(env.BUILD_IMAGE).pull()
                     }
                 }
+                echo "✅ 已完成编译环境镜像拉取！"
             }
         }
         
@@ -52,6 +54,7 @@ pipeline {
                         '''
                     }
                 }
+                echo "✅ 已完成容器化编译！"
             }
         }
         
@@ -78,6 +81,7 @@ pipeline {
                     }
                     junit 'build/Testing/**/*.xml'  // 收集测试报告
                 }
+                echo "✅ 已完成容器化测试！"
             }
         }
         
@@ -89,6 +93,7 @@ pipeline {
                         def appImage = docker.build(env.APP_IMAGE, "--build-arg BUILD_NUMBER=${env.BUILD_NUMBER} .")
                     }
                 }
+                echo "✅ 已完成应用镜像构建！"
             }
         }
         
@@ -101,6 +106,7 @@ pipeline {
                         docker.image(env.APP_IMAGE).push('latest')
                     }
                 }
+                echo "✅ 已完成应用镜像推送！"
             }
         }
         
@@ -118,6 +124,7 @@ pipeline {
                         """
                     }
                 }
+                echo "✅ 已完成应用镜像部署！"
             }
         }
     }
