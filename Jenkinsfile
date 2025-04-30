@@ -23,27 +23,6 @@ pipeline {
     }
     
     stages {
-        // 阶段1: 拉取源代码（无需认证）
-        //stage('Checkout') {
-        //    steps {
-        //        script {
-        //            try {
-        //                checkout([
-        //                   $class: 'GitSCM',
-        //                   branches: [[name: env.BRANCH]],
-        //                   userRemoteConfigs: [[
-        //                        url: env.REPO_URL,
-        //                        credentialsId: ''  // 显式声明无需认证
-        //                    ]]
-        //                ])
-        //                echo "✅ 已完成代码检出！"
-        //            } catch (Exception e) {
-        //                error("❌ 代码检出失败: ${e.getMessage()}")
-        //           }
-        //        }
-        //    }
-        //}
-
         // 阶段1: 拉取源代码 (需要认证)
         stage('Checkout') {
             steps {
@@ -82,7 +61,6 @@ pipeline {
             }
         }
 
-        // 阶段3: 容器化编译（使用 nerdctl）
         stage('Build') {
             steps {
                 script {
@@ -93,15 +71,26 @@ pipeline {
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
-                                    echo "=== 安装编译工具 ==="
                                     if ! (yum install -y cmake make gcc-c++); then
+                                        echo "=== 安装编译工具 ==="
                                         echo "❌ 错误：无法安装 cmake/make/g++，请检查基础镜像是否支持包管理"
                                         exit 1
                                     fi
                                     echo "=== 开始编译 ==="
                                     mkdir -p ${env.BUILD_DIR} && cd ${env.BUILD_DIR}
-                                    cmake .. -DCMAKE_BUILD_TYPE=Release
-                                    make -j\$(nproc)
+                                    cmake .. -DCMAKE_BUILD_TYPE=Release || {
+                                        echo "❌ CMake 配置失败";
+                                        exit 1;
+                                    }
+                                    make -j\$(nproc) || {
+                                        echo "❌ 编译失败";
+                                        exit 1;
+                                    }
+                                    # 验证测试程序存在
+                                    [ -f "test_http_server" ] || {
+                                        echo "❌ 错误：测试程序未生成";
+                                        exit 1;
+                                    }
                                     echo "=== 编译完成 ==="
                                 '
                         """
@@ -124,12 +113,47 @@ pipeline {
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
-                                    echo "=== 开始测试 ==="
+                                    # 安装 CTest 和网络工具
+                                    if ! (yum install -y cmake net-tools); then
+                                        echo "=== 安装CTest 和网络工具 ==="
+                                        echo "❌ 错误：无法安装 cmake/net-tools，请检查基础镜像是否支持包管理"
+                                        exit 1
+                                    fi
+                                    # 检查测试可执行文件
+                                    echo "=== 验证构建产物 ==="
+                                    ls -l ${env.BUILD_DIR}
+                                    [ -f "${env.BUILD_DIR}/test_http_server" ] || {
+                                        echo "❌ 错误：测试程序未生成";
+                                        exit 1;
+                                    }
+
+                                    # 启动服务并检测端口
+                                    echo "=== 启动测试服务 ==="
                                     cd ${env.BUILD_DIR}
                                     ./test_http_server &
                                     SERVER_PID=\$!
-                                    sleep 2
-                                    ctest --output-on-failure
+
+                                    # 检测服务端口（假设服务监听 8080）
+                                    timeout=10
+                                    while ! netstat -tuln | grep -q ':8080'; do
+                                        sleep 1
+                                        timeout=\$((timeout-1))
+                                        [ \$timeout -le 0 ] && {
+                                            echo "❌ 错误：服务启动超时";
+                                            kill \$SERVER_PID 2>/dev/null;
+                                            exit 1;
+                                        }
+                                    done
+
+                                    # 执行测试
+                                    echo "=== 运行 CTest ==="
+                                    ctest --output-on-failure || {
+                                        echo "❌ 测试失败";
+                                        kill \$SERVER_PID;
+                                        exit 1;
+                                    }
+
+                                    # 清理
                                     kill \$SERVER_PID
                                     echo "=== 测试完成 ==="
                                 '
