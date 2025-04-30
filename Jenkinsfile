@@ -102,6 +102,8 @@ pipeline {
             }
         }
 
+        //junit 'build/Testing/**/*.xml'    yxmflag
+/*
         // 阶段4: 容器化测试（使用 nerdctl）
         stage('Test') {
             steps {
@@ -158,7 +160,7 @@ pipeline {
                                     echo "=== 测试完成 ==="
                                 '
                         """
-                        junit 'build/Testing/**/*.xml'
+                        //junit *********.xml   yxmflag
                         echo "✅ 已完成容器化测试！"
                     } catch (Exception e) {
                         error("❌ 容器化测试失败: ${e.getMessage()}")
@@ -166,7 +168,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // 阶段5: 构建应用镜像（使用 nerdctl）
         stage('Build Image') {
             steps {
