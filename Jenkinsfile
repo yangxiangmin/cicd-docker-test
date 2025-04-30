@@ -192,7 +192,7 @@ pipeline {
             }
         }
 
-        // 阶段5: 构建应用镜像（使用 nerdctl）
+        // 阶段5: 构建应用镜像（使用 nerdctl）--insecure-registry跳过 TLS 验证
         stage('Build Image') {
             steps {
                 script {
