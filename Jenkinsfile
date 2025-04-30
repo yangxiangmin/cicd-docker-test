@@ -143,7 +143,6 @@ pipeline {
             }
         }
 
-/* //yxmflag
         // 阶段5: 构建应用镜像（使用 nerdctl）
         stage('Build Image') {
             steps {
@@ -201,7 +200,6 @@ pipeline {
                 }
             }
         }
-    */                //yxmflag
     }
     
     // 后置处理
