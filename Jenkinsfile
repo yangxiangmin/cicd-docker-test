@@ -129,7 +129,7 @@ pipeline {
                                 /bin/sh -c '
                                     echo "=== 开始测试 ==="
                                     cd ${env.BUILD_DIR}
-                                    ./http_server &
+                                    ./test_http_server &
                                     SERVER_PID=\$!
                                     sleep 2
                                     ctest --output-on-failure
