@@ -198,6 +198,11 @@ pipeline {
                 script {
                     try {
                         sh """
+                            # 配置 nerdctl 全局跳过 TLS 验证
+                            mkdir -p \$HOME/.docker
+                            echo '{"insecure-registries": ["dockhub.ghtchina.com:6060"]}' > \$HOME/.docker/config.json
+
+                            # 构建镜像
                             nerdctl build \
                                 --insecure-registry \
                                 --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} \
