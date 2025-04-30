@@ -169,6 +169,29 @@ pipeline {
             }
         }
 */
+        // 阶段5： 认证阶段
+        stage('Login to Registry') {
+            steps {
+                script {
+                    try {
+                        // 更安全的做法：使用 Jenkins Credentials ID
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-registry-creds',
+                            usernameVariable: 'REGISTRY_USER',
+                            passwordVariable: 'REGISTRY_PASS'
+                        )]) {
+                            sh """
+                                nerdctl login -u $REGISTRY_USER -p $REGISTRY_PASS dockhub.ghtchina.com:6060
+                            """
+                        }
+                        echo "✅ 已成功登录镜像仓库"
+                    } catch (Exception e) {
+                        error("❌ 镜像仓库登录失败: ${e.getMessage()}")
+                    }
+                }
+            }
+        }
+
         // 阶段5: 构建应用镜像（使用 nerdctl）
         stage('Build Image') {
             steps {
