@@ -199,6 +199,7 @@ pipeline {
                     try {
                         sh """
                             nerdctl build \
+                                --insecure-registry \
                                 --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} \
                                 -t ${env.APP_IMAGE} .
                         """
