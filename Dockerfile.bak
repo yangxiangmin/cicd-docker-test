@@ -1,6 +1,5 @@
 # 使用ARM架构的基础镜像
-#FROM dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0 AS builder
-FROM ubuntu:22.04 AS builder
+FROM dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0 AS builder
 
 WORKDIR /app
 COPY . .
@@ -10,8 +9,7 @@ RUN mkdir build && cd build && \
     make -j$(nproc)
 
 # 运行时镜像
-#FROM dockhub.ghtchina.com:6060/ims-cloud/base/runtime_arm:1.0
-FROM ubuntu:22.04
+FROM dockhub.ghtchina.com:6060/ims-cloud/base/runtime_arm:1.0
 
 WORKDIR /app
 COPY --from=builder /app/build/http_server /app/
@@ -26,5 +24,5 @@ RUN apt-get update && \
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD ./health_check.sh || exit 1
 
-EXPOSE 8088
+EXPOSE 8080
 CMD ["./http_server"]
