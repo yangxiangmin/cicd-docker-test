@@ -228,9 +228,9 @@ pipeline {
                             sh """
                                 # 确认 Dockerfile 存在
                                 ls -l Dockerfile
-                                
+
                                 nerdctl --insecure-registry https://dockhub.ghtchina.com:6060 \
-                                  build -t ${env.APP_IMAGE} \
+                                  build --tag ${env.APP_IMAGE} \
                                   -f Dockerfile .# 明确指定 Dockerfile
                             """
                         }
