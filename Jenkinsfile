@@ -226,9 +226,12 @@ pipeline {
                         // 通过环境变量传递构建号到 Dockerfile
                         withEnv(["BUILD_NUMBER=${env.BUILD_NUMBER}"]) {
                             sh """
-                                nerdctl build --insecure-registry dockhub.ghtchina.com:6060 \
-                                    -t ${env.APP_IMAGE} \
-                                    -f Dockerfile .  # 明确指定 Dockerfile
+                                # 确认 Dockerfile 存在
+                                ls -l Dockerfile
+                                
+                                nerdctl --insecure-registry https://dockhub.ghtchina.com:6060 \
+                                  build -t ${env.APP_IMAGE} \
+                                  -f Dockerfile .# 明确指定 Dockerfile
                             """
                         }
                         echo "✅ 已完成应用镜像构建！镜像标签: ${env.APP_IMAGE}"
