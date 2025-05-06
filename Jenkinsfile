@@ -30,7 +30,7 @@ pipeline {
                 }
             }
         }
-        
+
         // 阶段1: 拉取源代码 (需要认证)
         stage('Checkout') {
             steps {
@@ -201,6 +201,7 @@ pipeline {
         }
 
         // 阶段5: 构建应用镜像（使用 nerdctl）--insecure-registry跳过 TLS 验证
+/*        
         stage('Build Image') {
             steps {
                 script {
@@ -212,6 +213,26 @@ pipeline {
                         """
                         echo "✅ 已完成应用镜像构建！"
                     } catch (Exception e) {
+                        error("❌ 应用镜像构建失败: ${e.getMessage()}")
+                    }
+                }
+            }
+        }
+*/
+        stage('Build Image') {
+            steps {
+                script {
+                    try {
+                        // 通过环境变量传递构建号到 Dockerfile
+                        withEnv(["BUILD_NUMBER=${env.BUILD_NUMBER}"]) {
+                            sh """
+                                nerdctl --insecure-registry dockhub.ghtchina.com:6060 build \
+                                    -t ${env.APP_IMAGE} .
+                            """
+                        }
+                        echo "✅ 已完成应用镜像构建！镜像标签: ${env.APP_IMAGE}"
+                    } catch (Exception e) {
+                        // 失败时明确提示错误类型
                         error("❌ 应用镜像构建失败: ${e.getMessage()}")
                     }
                 }
