@@ -226,7 +226,7 @@ pipeline {
                         // 通过环境变量传递构建号到 Dockerfile
                         withEnv(["BUILD_NUMBER=${env.BUILD_NUMBER}"]) {
                             sh """
-                                nerdctl --insecure-registry dockhub.ghtchina.com:6060 build \
+                                nerdctl build --insecure-registry dockhub.ghtchina.com:6060 \
                                     -t ${env.APP_IMAGE} .
                             """
                         }
