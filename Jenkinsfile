@@ -227,7 +227,8 @@ pipeline {
                         withEnv(["BUILD_NUMBER=${env.BUILD_NUMBER}"]) {
                             sh """
                                 nerdctl build --insecure-registry dockhub.ghtchina.com:6060 \
-                                    -t ${env.APP_IMAGE} .
+                                    -t ${env.APP_IMAGE} \
+                                    -f Dockerfile .  # 明确指定 Dockerfile
                             """
                         }
                         echo "✅ 已完成应用镜像构建！镜像标签: ${env.APP_IMAGE}"
@@ -238,7 +239,7 @@ pipeline {
                 }
             }
         }
-        
+
         // 阶段6: 推送镜像（使用 nerdctl）
         stage('Push Image') {
             steps {
