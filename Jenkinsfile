@@ -231,7 +231,7 @@ pipeline {
 
                                 # 明确指定 Dockerfile
                                 nerdctl --insecure-registry https://dockhub.ghtchina.com:6060 \
-                                  build --tag ${env.APP_IMAGE} \
+                                  build ${env.APP_IMAGE} \
                                   -f Dockerfile .
                             """
                         }
