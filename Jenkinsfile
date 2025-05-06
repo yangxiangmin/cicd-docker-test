@@ -23,6 +23,14 @@ pipeline {
     }
     
     stages {
+        stage('Debug Build Number') {
+            steps {
+                script {
+                    echo "当前构建号: ${env.BUILD_NUMBER}"
+                }
+            }
+        }
+        
         // 阶段1: 拉取源代码 (需要认证)
         stage('Checkout') {
             steps {

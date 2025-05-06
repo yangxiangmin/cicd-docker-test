@@ -1,3 +1,6 @@
+# 声明构建时的变量
+ARG BUILD_NUMBER
+
 # 使用ARM架构的基础镜像（基于YUM的发行版，如openEuler）
 FROM dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0 AS builder
 
@@ -17,6 +20,12 @@ FROM dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0
 WORKDIR /app
 COPY --from=builder /app/build/http_server /app/
 COPY scripts/health_check.sh /app/
+
+# 赋予脚本执行权限
+RUN chmod +x /app/health_check.sh
+
+# 使用 BUILD_NUMBER 作为镜像标签或版本信息
+LABEL build_number=${BUILD_NUMBER}
 
 # 安装运行时依赖（使用yum）
 RUN yum update -y && \
