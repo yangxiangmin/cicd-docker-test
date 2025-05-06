@@ -198,7 +198,7 @@ pipeline {
                 script {
                     try {
                         sh """
-                            nerdctl build \
+                            nerdctl --insecure-registry dockhub.ghtchina.com:6060 build \
                                 --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} \
                                 -t ${env.APP_IMAGE} .
                         """
