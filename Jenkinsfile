@@ -16,8 +16,8 @@ pipeline {
         
         // 容器镜像配置
         BUILD_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0'
-        APP_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/http-server:${BUILD_NUMBER}'
-        APP_IMAGE_NO_BUILD_NUMBER = 'dockhub.ghtchina.com:6060/ims-cloud/http-server'
+        APP_IMAGE = 'dockhub.ghtchina.com:6060/yxm/http-server:${BUILD_NUMBER}'
+        APP_IMAGE_NO_BUILD_NUMBER = 'dockhub.ghtchina.com:6060/yxm/http-server'
         
         // 构建配置
         BUILD_DIR = 'build'
@@ -248,9 +248,7 @@ pipeline {
         
         // 阶段8: 部署（仅 main 分支执行）
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
+            //when { branch 'main' }
             steps {
                 script {
                     try {
