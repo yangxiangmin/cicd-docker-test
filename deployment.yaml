@@ -1,64 +1,43 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: http-server
-  labels:
-    app: http-server
+  namespace: default
 spec:
+  serviceName: "http-server-service"
   replicas: 3
   selector:
     matchLabels:
       app: http-server
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
-    type: RollingUpdate
   template:
     metadata:
       labels:
         app: http-server
-      annotations:
-        buildNumber: "${BUILD_NUMBER}"
     spec:
+#      hostNetwork: true    # 直接使用宿主机网络（需处理端口冲突）
       containers:
-      - name: http-server
+      - name: http-server-container
         image: dockhub.ghtchina.com:6060/ims-cloud/http-server:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: "1"
-            memory: 512Mi
-          requests:
-            cpu: "0.5"
-            memory: 256Mi
-      imagePullSecrets:
-      - name: docker-registry-secret
+        imagePullPolicy: IfNotPresent
+        command: ["stdbuf", "-oL", "/app/http_server"]
+        ports:              # █ 新增：声明容器端口 █
+        - containerPort: 8088
+          name: http
+          protocol: TCP
+#        securityContext:
+#          privileged: true
 
 ---
+# █ 新增：创建 Service 暴露服务 █
 apiVersion: v1
 kind: Service
 metadata:
-  name: http-server
+  name: http-server-service
 spec:
+  type: NodePort          # 通过节点端口访问
   selector:
     app: http-server
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
-  type: LoadBalancer
+  - port: 8088            # Service 监听的端口
+    targetPort: 8088      # 容器的端口
+    nodePort: 30888       # 宿主机开放的端口（范围 30000-32767）
