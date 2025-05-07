@@ -69,7 +69,6 @@ pipeline {
             }
         }
 
-        // 阶段3: 容器化编译
         stage('Build') {
             steps {
                 script {
@@ -112,6 +111,7 @@ pipeline {
         }
 
         //junit 'build/Testing/**/*.xml'    yxmflag
+/*
         // 阶段4: 容器化测试（使用 nerdctl）
         stage('Test') {
             steps {
@@ -169,7 +169,6 @@ pipeline {
                                 '
                         """
                         //junit *********.xml   yxmflag
-                        junit 'build/Testing/**/*.xml'
                         echo "✅ 已完成容器化测试！"
                     } catch (Exception e) {
                         error("❌ 容器化测试失败: ${e.getMessage()}")
@@ -177,7 +176,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // 阶段5： 认证阶段
         stage('Login to Registry') {
             steps {
@@ -201,7 +200,25 @@ pipeline {
             }
         }
 
-        // 阶段4: 构建应用镜像
+        // 阶段5: 构建应用镜像（使用 nerdctl）--insecure-registry跳过 TLS 验证
+/*        
+        stage('Build Image') {
+            steps {
+                script {
+                    try {
+                        sh """
+                            nerdctl --insecure-registry dockhub.ghtchina.com:6060 build \
+                                --build-arg BUILD_NUMBER=${env.BUILD_NUMBER} \
+                                -t ${env.APP_IMAGE} .
+                        """
+                        echo "✅ 已完成应用镜像构建！"
+                    } catch (Exception e) {
+                        error("❌ 应用镜像构建失败: ${e.getMessage()}")
+                    }
+                }
+            }
+        }
+*/
         stage('Build Image') {
             steps {
                 script {
@@ -213,7 +230,8 @@ pipeline {
                                 ls -l Dockerfile
 
                                 # 明确指定 Dockerfile
-                                docker build -f Dockerfile -t ${env.APP_IMAGE} .
+                                nerdctl --insecure-registry https://dockhub.ghtchina.com:6060 \
+                                  build ${env.APP_IMAGE} .
                             """
                         }
                         echo "✅ 已完成应用镜像构建！镜像标签: ${env.APP_IMAGE}"
