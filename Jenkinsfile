@@ -27,6 +27,7 @@ pipeline {
             steps {
                 script {
                     echo "当前构建号: ${env.BUILD_NUMBER}"
+                    echo "宿主机工作目录env.WORKSPACE: ${env.WORKSPACE}"
                 }
             }
         }
@@ -67,6 +68,7 @@ pipeline {
             }
         }
 
+/*
         // 阶段3: 容器化编译
         stage('Build') {
             steps {
@@ -108,6 +110,7 @@ pipeline {
                 }
             }
         }
+*/
 
         //junit 'build/Testing/**/*.xml'    yxmflag
         // 阶段4: 容器化测试（使用 docker）
