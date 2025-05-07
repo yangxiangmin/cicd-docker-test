@@ -10,7 +10,7 @@ COPY . .
 
 # 构建阶段：安装编译工具链（使用yum）
 RUN yum install -y cmake make gcc-c++ && \
-    rm -rf build && \  # 强制删除旧目录
+    rm -rf build && \
     mkdir build && \
     cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release && \
