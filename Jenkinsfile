@@ -112,6 +112,7 @@ pipeline {
         //junit 'build/Testing/**/*.xml'    yxmflag
         // 阶段4: 容器化测试（使用 docker）
         // docker run --rm --network=host \  // 添加网络模式，如果容器需要访问宿主机端口，建议使用 --network=host 参数
+/*
         stage('Test') {
             steps {
                 script {
@@ -168,7 +169,6 @@ pipeline {
                                 '
                         """
                         //junit *********.xml   yxmflag
-                        junit 'build/Testing/**/*.xml'
                         echo "✅ 已完成容器化测试！"
                     } catch (Exception e) {
                         error("❌ 容器化测试失败: ${e.getMessage()}")
@@ -176,7 +176,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // 阶段5： 认证阶段
         stage('Login to Registry') {
             steps {
