@@ -1,6 +1,6 @@
 # 声明构建时的变量
 ARG BUILD_NUMBER
-RUN echo "当前宿主工作目录:" && pwd
+# RUN echo "当前宿主工作目录:" && pwd
 
 # 使用ARM架构的基础镜像（基于YUM的发行版，如openEuler）
 FROM dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0 AS builder

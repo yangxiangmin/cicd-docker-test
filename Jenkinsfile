@@ -68,7 +68,6 @@ pipeline {
             }
         }
 
-/*
         // 阶段3: 容器化编译
         stage('Build') {
             steps {
@@ -110,7 +109,6 @@ pipeline {
                 }
             }
         }
-*/
 
         //junit 'build/Testing/**/*.xml'    yxmflag
         // 阶段4: 容器化测试（使用 docker）
