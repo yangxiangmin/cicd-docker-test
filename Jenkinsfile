@@ -17,6 +17,7 @@ pipeline {
         // 容器镜像配置
         BUILD_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0'
         APP_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/http-server:${BUILD_NUMBER}'
+        APP_IMAGE_NO_BUILD_NUMBER = 'dockhub.ghtchina.com:6060/ims-cloud/http-server'
         
         // 构建配置
         BUILD_DIR = 'build'
@@ -234,8 +235,8 @@ pipeline {
                     try {
                         sh """
                             docker push ${env.APP_IMAGE}
-                            docker tag ${env.APP_IMAGE} ${env.APP_IMAGE}:latest
-                            docker push ${env.APP_IMAGE}:latest
+                            docker tag ${env.APP_IMAGE} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
+                            docker push ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                         """
                         echo "✅ 已完成应用镜像推送！"
                     } catch (Exception e) {
