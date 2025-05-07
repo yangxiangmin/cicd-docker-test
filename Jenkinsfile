@@ -49,17 +49,15 @@ pipeline {
             }
         }
 
-        // 阶段2: 拉取编译环境镜像（使用 nerdctl）
+        // 阶段2: 拉取编译环境镜像（使用 docker）
         stage('Pull Build Image') {
             steps {
                 script {
                     try {
-                        //sh "nerdctl pull ${env.BUILD_IMAGE}"          // 拉取过程有很多后台输出信息
-
-                        sh "nerdctl pull --quiet ${env.BUILD_IMAGE}"    // 关闭输出信息，需要确保nerdctl 版本支持 --quiet 静默参数
+                        sh "docker pull --quiet ${env.BUILD_IMAGE} || docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"    // 关闭后台输出信息，使用 --quiet 静默参数或者重定向方案
 
                         // 如果不支持--quiet 静默参数，采用重定向方案
-                        // sh "nerdctl pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
+                        // sh "docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
 
                         echo "✅ 已完成编译环境镜像拉取！"
                     } catch (Exception e) {
@@ -75,7 +73,7 @@ pipeline {
                 script {
                     try {
                         sh """
-                            nerdctl run --rm \
+                            docker run --rm \
                                 -v ${env.WORKSPACE}:/workspace \
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
@@ -112,13 +110,14 @@ pipeline {
         }
 
         //junit 'build/Testing/**/*.xml'    yxmflag
-        // 阶段4: 容器化测试（使用 nerdctl）
+        // 阶段4: 容器化测试（使用 docker）
+        // docker run --rm --network=host \  // 添加网络模式，如果容器需要访问宿主机端口，建议使用 --network=host 参数
         stage('Test') {
             steps {
                 script {
                     try {
                         sh """
-                            nerdctl run --rm \
+                            docker run --rm --network=host\
                                 -v ${env.WORKSPACE}:/workspace \
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
@@ -190,7 +189,7 @@ pipeline {
                             passwordVariable: 'REGISTRY_PASS'
                         )]) {
                             sh """
-                                nerdctl login -u $REGISTRY_USER -p $REGISTRY_PASS dockhub.ghtchina.com:6060
+                                docker login -u $REGISTRY_USER -p $REGISTRY_PASS dockhub.ghtchina.com:6060
                             """
                         }
                         echo "✅ 已成功登录镜像仓库"
@@ -201,7 +200,7 @@ pipeline {
             }
         }
 
-        // 阶段4: 构建应用镜像
+        // 阶段6: 构建应用镜像
         stage('Build Image') {
             steps {
                 script {
@@ -225,15 +224,15 @@ pipeline {
             }
         }
 
-        // 阶段6: 推送镜像（使用 nerdctl）
+        // 阶段7: 推送镜像（使用 docker）
         stage('Push Image') {
             steps {
                 script {
                     try {
                         sh """
-                            nerdctl push ${env.APP_IMAGE}
-                            nerdctl tag ${env.APP_IMAGE} ${env.APP_IMAGE}:latest
-                            nerdctl push ${env.APP_IMAGE}:latest
+                            docker push ${env.APP_IMAGE}
+                            docker tag ${env.APP_IMAGE} ${env.APP_IMAGE}:latest
+                            docker push ${env.APP_IMAGE}:latest
                         """
                         echo "✅ 已完成应用镜像推送！"
                     } catch (Exception e) {
@@ -243,7 +242,7 @@ pipeline {
             }
         }
         
-        // 阶段7: 部署（仅 main 分支执行）
+        // 阶段8: 部署（仅 main 分支执行）
         stage('Deploy') {
             when {
                 branch 'main'
