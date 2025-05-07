@@ -253,7 +253,6 @@ pipeline {
                 script {
                     try {
                         sh """
-                            kubectl delete -f deployment.yaml
                             kubectl apply -f deployment.yaml
                             kubectl rollout status deployment/http-server --timeout=300s
                         """
