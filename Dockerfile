@@ -30,10 +30,10 @@ RUN chmod +x /app/health_check.sh
 LABEL build_number=${BUILD_NUMBER}
 
 # 安装运行时依赖（使用yum）
-RUN yum update -y && \
-    yum install -y curl && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+# RUN yum update -y && \
+#    yum install -y curl && \
+#    yum clean all && \
+#    rm -rf /var/cache/yum
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s \
