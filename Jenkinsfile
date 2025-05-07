@@ -253,7 +253,7 @@ pipeline {
                 script {
                     try {
                         sh """
-                            kubectl apply -f deployment.yaml
+                            kubectl apply -f deployment.yaml && kubectl apply -f deployment.yaml
                             kubectl rollout status deployment/http-server --timeout=300s
                         """
                         echo "✅ 已完成应用镜像部署！"
