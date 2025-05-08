@@ -244,27 +244,13 @@ pipeline {
             }
         }
         
-        // 阶段8: 部署（仅 main 分支执行）
-/*
+        // 阶段8: 部署
         stage('Deploy') {
-            //when { branch 'main' }
-            steps {
-                script {
-                    try {
-                        sh """
-                            kubectl apply -f deployment.yaml
-                            kubectl rollout status statefulset/http-server --timeout=300s
-                        """
-                        echo "✅ 已完成应用镜像部署！"
-                    } catch (Exception e) {
-                        error("❌ 应用镜像部署失败: ${e.getMessage()}")
-                    }
-                }
+            // 指定仅在 agent-02-Deploy（目的部署节点） 节点运行
+            agent {
+                label 'agent-02-Deploy'
             }
-        }
-    }
-*/
-        stage('Deploy') {
+
             steps {
                 script {
                     try {
