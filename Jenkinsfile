@@ -270,16 +270,21 @@ pipeline {
         always {
             cleanWs()
         }
+
         failure {
-            emailext body: '${DEFAULT_CONTENT}\n\n${BUILD_URL}', 
-                    subject: 'FAILED: Job ${JOB_NAME} - Build ${BUILD_NUMBER}', 
-                    to: 'yang.xiangmin@ghtchina.com'
+            mail(
+                to: 'yang.xiangmin@ghtchina.com',
+                subject: "FAILED: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER}",
+                body: "Details: ${env.BUILD_URL}"
+            )
         }
         success {
-             echo "✅ 流水线执行成功！"
-            emailext body: '${DEFAULT_CONTENT}\n\n${BUILD_URL}', 
-                    subject: 'SUCCESS: Job ${JOB_NAME} - Build ${BUILD_NUMBER}', 
-                    to: 'yang.xiangmin@ghtchina.com'
+            echo "✅ 流水线执行成功！"
+            mail(
+                to: 'yang.xiangmin@ghtchina.com',
+                subject: "SUCCESS: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER}",
+                body: "Details: ${env.BUILD_URL}"
+            )
         }
     }
 }
