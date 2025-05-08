@@ -247,6 +247,7 @@ pipeline {
         }
         
         // 阶段8: 部署（仅 main 分支执行）
+/*
         stage('Deploy') {
             //when { branch 'main' }
             steps {
@@ -264,7 +265,41 @@ pipeline {
             }
         }
     }
+*/
+        stage('Deploy') {
+            steps {
+                script {
+                    try {
+                        // 检查资源是否存在
+                        def isDeployed = sh(
+                            script: 'kubectl get statefulset http-server --ignore-not-found --no-headers',
+                            returnStatus: true
+                        ) == 0
 
+                        // 存在则删除旧部署
+                        if (isDeployed) {
+                            echo "🔍 检测到已存在的 http-server 部署，正在卸载..."
+                            sh """
+                                kubectl delete -f deployment.yaml --ignore-not-found
+                                kubectl wait --for=delete statefulset/http-server --timeout=120s || true
+                            """
+                        }
+
+                        // 部署新版本
+                        echo "🚀 开始部署应用镜像..."
+                        sh """
+                            kubectl apply -f deployment.yaml
+                            kubectl rollout status statefulset/http-server --timeout=300s
+                        """
+                        echo "✅ 应用镜像部署成功！"
+                    } catch (Exception e) {
+                        error("❌ 应用镜像部署失败: ${e.getMessage()}")
+                    }
+                }
+            }
+        }
+    }
+    
     // 后置处理
     post {
         always {
