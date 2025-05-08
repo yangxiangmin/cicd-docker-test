@@ -305,10 +305,10 @@ pipeline {
         }
 
         failure {
-            echo "❌ 流水线执行失败，${env.JOB_NAME} - Build ${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+            echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
         }
         success {
-            echo "✅ 流水线执行成功，${env.JOB_NAME} - Build ${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+            echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
         }
     }
 }
