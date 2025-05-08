@@ -43,9 +43,9 @@ pipeline {
                             branches: [[name: env.BRANCH]],
                             userRemoteConfigs: [[url: env.REPO_URL]]
                         ])
-                        echo "✅ 已完成代码检出！"
+                        echo "✅ 源代码检出成功！"
                     } catch (Exception e) {
-                        error("❌ 代码检出失败: ${e.getMessage()}")
+                        error("❌ 代码源检出失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -61,9 +61,9 @@ pipeline {
                         // 如果不支持--quiet 静默参数，采用重定向方案
                         // sh "docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
 
-                        echo "✅ 已完成编译环境镜像拉取！"
+                        echo "✅ 编译环境镜像拉取及安装成功！"
                     } catch (Exception e) {
-                        error("❌ 编译环境镜像拉取失败: ${e.getMessage()}")
+                        error("❌ 编译环境镜像拉取及安装失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -103,9 +103,9 @@ pipeline {
                                     echo "=== 编译完成 ==="
                                 '
                         """
-                        echo "✅ 已完成容器化编译！"
+                        echo "✅ 源代码容器化编译成功！"
                     } catch (Exception e) {
-                        error("❌ 容器化编译失败: ${e.getMessage()}")
+                        error("❌ 源代码容器化编译失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -171,9 +171,9 @@ pipeline {
                                 '
                         """
                         //junit *********.xml   yxmflag
-                        echo "✅ 已完成容器化测试！"
+                        echo "✅ 源代码容器化测试成功！"
                     } catch (Exception e) {
-                        error("❌ 容器化测试失败: ${e.getMessage()}")
+                        error("❌ 源代码容器化测试失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -194,9 +194,9 @@ pipeline {
                                 docker login -u $REGISTRY_USER -p $REGISTRY_PASS dockhub.ghtchina.com:6060
                             """
                         }
-                        echo "✅ 已成功登录镜像仓库"
+                        echo "✅ 应用镜像仓库认证成功"
                     } catch (Exception e) {
-                        error("❌ 镜像仓库登录失败: ${e.getMessage()}")
+                        error("❌ 应用镜像仓库认证失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -217,7 +217,7 @@ pipeline {
                                 docker build -f Dockerfile -t ${env.APP_IMAGE} .
                             """
                         }
-                        echo "✅ 已完成应用镜像构建！镜像标签: ${env.APP_IMAGE}"
+                        echo "✅ 应用镜像构建成功！镜像标签: ${env.APP_IMAGE}"
                     } catch (Exception e) {
                         // 失败时明确提示错误类型
                         error("❌ 应用镜像构建失败: ${e.getMessage()}")
@@ -236,9 +236,9 @@ pipeline {
                             docker tag ${env.APP_IMAGE} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                             docker push ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                         """
-                        echo "✅ 已完成应用镜像推送！"
+                        echo "✅ 应用镜像推送至应用镜像仓库成功！"
                     } catch (Exception e) {
-                        error("❌ 应用镜像推送失败: ${e.getMessage()}")
+                        error("❌ 应用镜像推送至应用镜像仓库失败: ${e.getMessage()}")
                     }
                 }
             }
