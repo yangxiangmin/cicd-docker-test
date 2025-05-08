@@ -272,19 +272,10 @@ pipeline {
         }
 
         failure {
-            mail(
-                to: 'yang.xiangmin@ghtchina.com',
-                subject: "FAILED: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER}",
-                body: "Details: ${env.BUILD_URL}"
-            )
+            echo "❌ 流水线执行失败，${env.JOB_NAME} - Build ${env.BUILD_NUMBER} - ${env.BUILD_URL}"
         }
         success {
-            echo "✅ 流水线执行成功！"
-            mail(
-                to: 'yang.xiangmin@ghtchina.com',
-                subject: "SUCCESS: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER}",
-                body: "Details: ${env.BUILD_URL}"
-            )
+            echo "✅ 流水线执行成功，${env.JOB_NAME} - Build ${env.BUILD_NUMBER} - ${env.BUILD_URL}"
         }
     }
 }
