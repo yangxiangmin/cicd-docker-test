@@ -24,7 +24,7 @@ pipeline {
     }
     
     stages {
-        stage('Debug Build Number') {
+        stage('Output Current Build Number') {
             steps {
                 script {
                     echo "当前构建号: ${env.BUILD_NUMBER}"
@@ -34,7 +34,7 @@ pipeline {
         }
 
         // 阶段1: 拉取源代码 (需要认证)
-        stage('Checkout') {
+        stage('Checkout Source Code') {
             steps {
                 script {
                     try {
@@ -52,7 +52,7 @@ pipeline {
         }
 
         // 阶段2: 拉取编译环境镜像（使用 docker）
-        stage('Pull Build Image') {
+        stage('Pull Compilation Image') {
             steps {
                 script {
                     try {
@@ -70,7 +70,7 @@ pipeline {
         }
 
         // 阶段3: 容器化编译
-        stage('Build') {
+        stage('Containerized Compilation') {
             steps {
                 script {
                     try {
@@ -115,7 +115,7 @@ pipeline {
         // 阶段4: 容器化测试（使用 docker）
         // docker run --rm --network=host \  // 添加网络模式，如果容器需要访问宿主机端口，建议使用 --network=host 参数
 /*
-        stage('Test') {
+        stage('Containerization Testing') {
             steps {
                 script {
                     try {
@@ -203,7 +203,7 @@ pipeline {
         }
 
         // 阶段6: 构建应用镜像
-        stage('Build Image') {
+        stage('Building Application Image') {
             steps {
                 script {
                     try {
@@ -227,7 +227,7 @@ pipeline {
         }
 
         // 阶段7: 推送镜像（使用 docker）
-        stage('Push Image') {
+        stage('Push Application Image') {
             steps {
                 script {
                     try {
@@ -245,7 +245,7 @@ pipeline {
         }
         
         // 阶段8: 部署
-        stage('Deploy') {
+        stage('Deploy Application Image') {
             // 指定仅在 agent-02-Deploy（目的部署节点） 节点运行
             agent {
                 label 'agent-02-Deploy'
