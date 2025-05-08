@@ -264,23 +264,22 @@ pipeline {
             }
         }
     }
-    
+
     // 后置处理
     post {
         always {
             cleanWs()
         }
-        success {
-            slackSend(
-                color: 'good',
-                message: "✅ HTTP Server 部署成功: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
-        }
         failure {
-            slackSend(
-                color: 'danger',
-                message: "❌ HTTP Server 部署失败: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
+            emailext body: '${DEFAULT_CONTENT}\n\n${BUILD_URL}', 
+                    subject: 'FAILED: Job ${JOB_NAME} - Build ${BUILD_NUMBER}', 
+                    to: 'yang.xiangmin@ghtchina.com'
+        }
+        success {
+             echo "✅ 流水线执行成功！"
+            emailext body: '${DEFAULT_CONTENT}\n\n${BUILD_URL}', 
+                    subject: 'SUCCESS: Job ${JOB_NAME} - Build ${BUILD_NUMBER}', 
+                    to: 'yang.xiangmin@ghtchina.com'
         }
     }
 }
