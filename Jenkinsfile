@@ -45,6 +45,8 @@ pipeline {
                         ])
                         echo "✅ 源代码检出成功！"
 
+                        sh 'ls -l'
+                        
                         dir('deploy') {
                             sh 'cp deployment.yaml ./'
                             stash name: 'deployment-config', includes: 'deployment.yaml'    // 将部署文件暂存在Jenkins Master节点上，用于部署节点获取
