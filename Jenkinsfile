@@ -141,7 +141,7 @@ pipeline {
                                     # 启动服务并检测端口
                                     echo "=== 启动测试服务 ==="
                                     cd ${env.BUILD_DIR}
-                                    ./test_http_server &
+                                    ./http_server &
                                     SERVER_PID=\$!
 
                                     # 检测服务端口（假设服务监听 8082）

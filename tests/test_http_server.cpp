@@ -1,69 +1,63 @@
-#include <cassert>
-#include <iostream>
+#include <cstdlib>
 #include <string>
-#include <sstream>
-#include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
+#include <iostream>
+#include <thread>
+#include <chrono>
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <cstring>
 
-#define TEST_PORT 8082
-#define TEST_BUFFER_SIZE 1024
+#define SERVER_PORT 8088
+#define TEST_PORT 8088
+#define BUFFER_SIZE 1024
 
-void start_test_server() {
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in server_addr;
-    
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(TEST_PORT);
-
-    bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    listen(server_socket, 1);
-    
-    int client_socket = accept(server_socket, NULL, NULL);
-    const char* response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, Test!";
-    send(client_socket, response, strlen(response), 0);
-    
-    close(client_socket);
-    close(server_socket);
+// 启动服务器子进程（实际项目中建议用 exec 启动编译后的二进制）
+void start_server() {
+    system("cd .. && ./http_server &"); // 后台运行服务器
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待服务器启动
 }
 
-void test_http_client() {
+// 发送 HTTP 请求并验证响应
+bool test_http_response() {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in serv_addr;
-    
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(TEST_PORT);
-    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
-    
-    connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-    
-    const char* request = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
-    send(sock, request, strlen(request), 0);
-    
-    char buffer[TEST_BUFFER_SIZE] = {0};
-    read(sock, buffer, TEST_BUFFER_SIZE - 1);
-    
-    std::string response(buffer);
-    assert(response.find("Hello, Test!") != std::string::npos);
-    
+    sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(TEST_PORT);
+    inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
+
+    if (connect(sock, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "连接服务器失败\n";
+        return false;
+    }
+
+    // 发送 HTTP 请求
+    const char* req = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    send(sock, req, strlen(req), 0);
+
+    // 接收响应
+    char buffer[BUFFER_SIZE];
+    ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
     close(sock);
+
+    if (len <= 0) return false;
+    buffer[len] = '\0';
+
+    // 验证响应内容
+    std::string response(buffer);
+    return (response.find("HTTP/1.1 200 OK") != std::string::npos) &&
+           (response.find("<h1>Hello, World!</h1>") != std::string::npos);
 }
 
 int main() {
-    std::cout << "Starting HTTP server tests...\n";
-    
-    // 测试1: 基本功能测试
-    start_test_server();
-    test_http_client();
-    std::cout << "Test 1 passed: Basic functionality\n";
-    
-    // 可以添加更多测试用例...
-    
-    std::cout << "All tests passed!\n";
-    return 0;
+    //start_server(); // 启动服务器，在主程序外启动，例如在Jenkinsfine的测试阶段启动
+
+    bool success = test_http_response();
+    if (success) {
+        std::cout << "✅ 集成测试通过\n";
+        return EXIT_SUCCESS;
+    } else {
+        std::cerr << "❌ 集成测试失败\n";
+        return EXIT_FAILURE;
+    }
 }
