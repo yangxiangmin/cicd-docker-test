@@ -44,7 +44,11 @@ pipeline {
                             userRemoteConfigs: [[url: env.REPO_URL]]
                         ])
                         echo "✅ 源代码检出成功！"
-                        stash name: 'deployment-config', includes: 'deployment.yaml'  // 将部署文件暂存在Jenkins Master节点上，用于部署节点获取
+
+                        dir('deploy') {
+                            sh 'cp deployment.yaml ./'
+                            stash name: 'deployment-config', includes: 'deployment.yaml'    // 将部署文件暂存在Jenkins Master节点上，用于部署节点获取
+                        }
                     } catch (Exception e) {
                         error("❌ 代码源检出失败: ${e.getMessage()}")
                     }
@@ -213,13 +217,15 @@ pipeline {
             agent {
                 label 'agent-02-Deploy'
             }
-
+            options {
+                skipDefaultCheckout true  // 禁用自动代码检出
+            }
             steps {
                 script {
                     try {
                         // 获取deployment.yaml
                         unstash 'deployment-config'
-                        
+
                         // 检查资源是否存在
                         def isDeployed = sh(
                             script: 'kubectl get statefulset http-server --ignore-not-found --no-headers',
