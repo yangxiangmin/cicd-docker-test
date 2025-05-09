@@ -109,7 +109,6 @@ pipeline {
                                     SERVER_PID=\$!
 
                                     echo "当前测试进程 PID: \$SERVER_PID"
-                                    ps -ef | grep test_http_server
 
                                     timeout=30
                                     while ! netstat -tuln | grep -q ':8088'; do
