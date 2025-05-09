@@ -141,12 +141,12 @@ pipeline {
                                     # 启动服务并检测端口
                                     echo "=== 启动测试服务 ==="
                                     cd ${env.BUILD_DIR}
-                                    ./http_server &
+                                    ./test_http_server &
                                     SERVER_PID=\$!
 
-                                    # 检测服务端口（假设服务监听 8082）
+                                    # 检测服务端口（假设服务监听 8088）
                                     timeout=30
-                                    while ! netstat -tuln | grep -q ':8082'; do
+                                    while ! netstat -tuln | grep -q ':8088'; do
                                         sleep 1
                                         timeout=\$((timeout-1))
                                         [ \$timeout -le 0 ] && {

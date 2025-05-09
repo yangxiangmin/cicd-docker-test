@@ -50,7 +50,7 @@ bool test_http_response() {
 }
 
 int main() {
-    //start_server(); // 启动服务器，在主程序外启动，例如在Jenkinsfine的测试阶段启动
+    start_server(); // 启动服务器，在主程序外启动，例如在Jenkinsfine的测试阶段启动
 
     bool success = test_http_response();
     if (success) {
