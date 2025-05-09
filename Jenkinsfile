@@ -70,21 +70,24 @@ pipeline {
         }
 
         // 阶段3: 容器化编译
-        stage('Containerized Compilation') {
+        stage('Containerized Build & Test') {
             steps {
                 script {
                     try {
                         sh """
-                            docker run --rm \
+                            docker run --rm --network=host \
                                 -v ${env.WORKSPACE}:/workspace \
                                 -w /workspace \
                                 ${env.BUILD_IMAGE} \
                                 /bin/sh -c '
-                                    if ! (yum install -y cmake make gcc-c++); then
-                                        echo "=== 安装编译工具 ==="
-                                        echo "❌ 错误：无法安装 cmake/make/g++，请检查基础镜像是否支持包管理"
+                                    # ----------- 环境初始化 -----------
+                                    echo "=== 安装编译和测试依赖 ==="
+                                    if ! (yum install -y cmake make gcc-c++ net-tools); then
+                                        echo "❌ 错误：依赖安装失败，请检查镜像包管理配置"
                                         exit 1
                                     fi
+
+                                    # ----------- 编译阶段 -----------
                                     echo "=== 开始编译 ==="
                                     mkdir -p ${env.BUILD_DIR} && cd ${env.BUILD_DIR}
                                     cmake .. -DCMAKE_BUILD_TYPE=Release || {
@@ -95,90 +98,47 @@ pipeline {
                                         echo "❌ 编译失败";
                                         exit 1;
                                     }
-                                    # 验证测试程序存在
                                     [ -f "test_http_server" ] || {
-                                        echo "❌ 错误：测试程序未生成";
-                                        exit 1;
-                                    }
-                                    echo "=== 编译完成 ==="
-                                '
-                        """
-                        echo "✅ 源代码容器化编译成功！"
-                    } catch (Exception e) {
-                        error("❌ 源代码容器化编译失败: ${e.getMessage()}")
-                    }
-                }
-            }
-        }
-
-        //junit 'build/Testing/**/*.xml'    yxmflag
-        // 阶段4: 容器化测试（使用 docker）
-        // docker run --rm --network=host \  // 添加网络模式，如果容器需要访问宿主机端口，建议使用 --network=host 参数
-        stage('Containerization Testing') {
-            steps {
-                script {
-                    try {
-                        sh """
-                            docker run --rm --network=host\
-                                -v ${env.WORKSPACE}:/workspace \
-                                -w /workspace \
-                                ${env.BUILD_IMAGE} \
-                                /bin/sh -c '
-                                    # 安装 CTest 和网络工具
-                                    if ! (yum install -y cmake net-tools); then
-                                        echo "=== 安装CTest 和网络工具 ==="
-                                        echo "❌ 错误：无法安装 cmake/net-tools，请检查基础镜像是否支持包管理"
-                                        exit 1
-                                    fi
-                                    # 检查测试可执行文件
-                                    echo "=== 验证构建产物 ==="
-                                    ls -l ${env.BUILD_DIR}
-                                    [ -f "${env.BUILD_DIR}/test_http_server" ] || {
-                                        echo "❌ 错误：测试程序未生成";
+                                        echo "❌ 错误：编译产物缺失";
                                         exit 1;
                                     }
 
-                                    # 启动服务并检测端口
-                                    echo "=== 启动测试服务 ==="
-                                    cd ${env.BUILD_DIR}
+                                    # ----------- 测试阶段 -----------
+                                    echo "=== 启动服务并运行测试 ==="
                                     ./test_http_server &
                                     SERVER_PID=\$!
-
-                                    # 检测服务端口（假设服务监听 8088）
                                     timeout=30
                                     while ! netstat -tuln | grep -q ':8088'; do
                                         sleep 1
                                         timeout=\$((timeout-1))
                                         [ \$timeout -le 0 ] && {
-                                            echo "❌ 错误：服务启动超时";
+                                            echo "❌ 服务启动超时";
                                             kill \$SERVER_PID 2>/dev/null;
                                             exit 1;
                                         }
                                     done
 
-                                    # 执行测试
-                                    echo "=== 运行 CTest ==="
+                                    echo "=== 执行 CTest 测试 ==="
                                     ctest --output-on-failure || {
                                         echo "❌ 测试失败";
                                         kill \$SERVER_PID;
                                         exit 1;
                                     }
 
-                                    # 清理
+                                    # ----------- 清理阶段 -----------
                                     kill \$SERVER_PID
-                                    echo "=== 测试完成 ==="
+                                    echo "=== 构建与测试完成 ==="
                                 '
                         """
-                        //junit *********.xml   yxmflag
                         junit 'build/Testing/**/*.xml'
-                        echo "✅ 源代码容器化测试成功！"
+                        echo "✅ 容器化构建与测试成功！"
                     } catch (Exception e) {
-                        error("❌ 源代码容器化测试失败: ${e.getMessage()}")
+                        error("❌ 容器化构建与测试失败: ${e.getMessage()}")
                     }
                 }
             }
         }
-
+        
         // 阶段5： 认证阶段
         stage('Login to Registry') {
             steps {
