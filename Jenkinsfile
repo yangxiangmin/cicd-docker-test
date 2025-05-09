@@ -66,9 +66,9 @@ pipeline {
                         // 如果不支持--quiet 静默参数，采用重定向方案
                         // sh "docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
 
-                        echo "✅ 编译环境镜像拉取及安装成功！"
+                        echo "✅ 基础镜像拉取及安装成功！"
                     } catch (Exception e) {
-                        error("❌ 编译环境镜像拉取及安装失败: ${e.getMessage()}")
+                        error("❌ 基础镜像拉取及安装失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -135,12 +135,12 @@ pipeline {
 
                                     # ----------- 清理阶段 -----------
                                     kill \$SERVER_PID 2>/dev/null
-                                    echo "=== 构建与测试完成 ==="
+                                    echo "=== 容器化编译与测试完成 ==="
                                 '
                         """
-                        echo "✅ 容器化编译与测试成功！"
+                        echo "✅ 应用容器化编译与测试成功！"
                     } catch (Exception e) {
-                        error("❌ 容器化编译与测试失败: ${e.getMessage()}")
+                        error("❌ 应用容器化编译与测试失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -203,9 +203,9 @@ pipeline {
                             docker tag ${env.APP_IMAGE} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                             docker push ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                         """
-                        echo "✅ 应用镜像推送至应用镜像仓库成功！"
+                        echo "✅ 应用镜像上传至应用镜像仓库成功！"
                     } catch (Exception e) {
-                        error("❌ 应用镜像推送至应用镜像仓库失败: ${e.getMessage()}")
+                        error("❌ 应用镜像上传至应用镜像仓库失败: ${e.getMessage()}")
                     }
                 }
             }
