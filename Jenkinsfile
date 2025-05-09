@@ -44,6 +44,7 @@ pipeline {
                             userRemoteConfigs: [[url: env.REPO_URL]]
                         ])
                         echo "✅ 源代码检出成功！"
+                        stash name: 'deployment-config', includes: 'deployment.yaml'  // 将部署文件暂存在Jenkins Master节点上，用于部署节点获取
                     } catch (Exception e) {
                         error("❌ 代码源检出失败: ${e.getMessage()}")
                     }
@@ -70,7 +71,7 @@ pipeline {
         }
 
         // 阶段3: 容器化编译
-        stage('Containerized Build & Test') {
+        stage('Containerized Compilation & Test') {
             steps {
                 script {
                     try {
@@ -133,9 +134,9 @@ pipeline {
                                     echo "=== 构建与测试完成 ==="
                                 '
                         """
-                        echo "✅ 容器化构建与测试成功！"
+                        echo "✅ 容器化编译与测试成功！"
                     } catch (Exception e) {
-                        error("❌ 容器化构建与测试失败: ${e.getMessage()}")
+                        error("❌ 容器化编译与测试失败: ${e.getMessage()}")
                     }
                 }
             }
@@ -216,6 +217,9 @@ pipeline {
             steps {
                 script {
                     try {
+                        // 获取deployment.yaml
+                        unstash 'deployment-config'
+                        
                         // 检查资源是否存在
                         def isDeployed = sh(
                             script: 'kubectl get statefulset http-server --ignore-not-found --no-headers',
