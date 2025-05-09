@@ -104,16 +104,20 @@ pipeline {
                                     }
 
                                     # ----------- 测试阶段 -----------
-                                    echo "=== 启动服务并运行测试 ==="
+                                    echo "=== 启动测试进程并运行测试 ==="
                                     ./test_http_server &
                                     SERVER_PID=\$!
+
+                                    echo "当前测试进程 PID: \$SERVER_PID"
+                                    ps -ef | grep test_http_server
+
                                     timeout=30
                                     while ! netstat -tuln | grep -q ':8088'; do
                                         sleep 1
                                         timeout=\$((timeout-1))
                                         [ \$timeout -le 0 ] && {
                                             echo "❌ 服务启动超时";
-                                            kill \$SERVER_PID 2>/dev/null;
+                                            #kill \$SERVER_PID 2>/dev/null;
                                             exit 1;
                                         }
                                     done
@@ -121,12 +125,12 @@ pipeline {
                                     echo "=== 执行 CTest 测试 ==="
                                     ctest --output-on-failure || {
                                         echo "❌ 测试失败";
-                                        kill \$SERVER_PID;
+                                        #kill \$SERVER_PID;
                                         exit 1;
                                     }
 
                                     # ----------- 清理阶段 -----------
-                                    kill \$SERVER_PID
+                                    #kill \$SERVER_PID
                                     echo "=== 构建与测试完成 ==="
                                 '
                         """
@@ -138,7 +142,7 @@ pipeline {
                 }
             }
         }
-        
+
         // 阶段5： 认证阶段
         stage('Login to Registry') {
             steps {
