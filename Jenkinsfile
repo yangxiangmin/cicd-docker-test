@@ -133,7 +133,6 @@ pipeline {
                                     echo "=== 构建与测试完成 ==="
                                 '
                         """
-                        junit 'build/Testing/**/*.xml'
                         echo "✅ 容器化构建与测试成功！"
                     } catch (Exception e) {
                         error("❌ 容器化构建与测试失败: ${e.getMessage()}")
