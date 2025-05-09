@@ -124,12 +124,12 @@ pipeline {
                                     echo "=== 执行 CTest 测试 ==="
                                     ctest --output-on-failure || {
                                         echo "❌ 测试失败";
-                                        kill $SERVER_PID 2>/dev/null;
+                                        kill \$SERVER_PID 2>/dev/null;
                                         exit 1;
                                     }
 
                                     # ----------- 清理阶段 -----------
-                                    kill $SERVER_PID 2>/dev/null
+                                    kill \$SERVER_PID 2>/dev/null
                                     echo "=== 构建与测试完成 ==="
                                 '
                         """
