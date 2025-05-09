@@ -14,7 +14,7 @@
 
 // 启动服务器子进程（实际项目中建议用 exec 启动编译后的二进制）
 void start_server() {
-    system("cd .. && ./http_server &"); // 后台运行服务器
+    system("./http_server &"); // 后台运行服务器
     std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待服务器启动
 }
 
