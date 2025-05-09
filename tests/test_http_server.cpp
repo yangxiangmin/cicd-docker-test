@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define TEST_PORT 8081
+#define TEST_PORT 8082
 #define TEST_BUFFER_SIZE 1024
 
 void start_test_server() {

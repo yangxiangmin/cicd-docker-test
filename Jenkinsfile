@@ -144,9 +144,9 @@ pipeline {
                                     ./test_http_server &
                                     SERVER_PID=\$!
 
-                                    # 检测服务端口（假设服务监听 8088）
+                                    # 检测服务端口（假设服务监听 8082）
                                     timeout=30
-                                    while ! netstat -tuln | grep -q ':8088'; do
+                                    while ! netstat -tuln | grep -q ':8082'; do
                                         sleep 1
                                         timeout=\$((timeout-1))
                                         [ \$timeout -le 0 ] && {
