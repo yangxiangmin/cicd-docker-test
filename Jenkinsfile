@@ -55,7 +55,7 @@ pipeline {
                 }
             }
         }
-
+/*
         // 阶段2: 拉取编译环境镜像（使用 docker）
         stage('Pull Compilation Image') {
             steps {
@@ -145,7 +145,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // 阶段5： 认证阶段
         stage('Login to Registry') {
             steps {
@@ -195,7 +195,7 @@ pipeline {
                 script {
                     try {
                         def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
-                        
+
                         sh """
                             docker push ${appImage}
 
