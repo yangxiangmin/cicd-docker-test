@@ -38,6 +38,7 @@ pipeline {
         stage('拉取源代码') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         checkout([
                             $class: 'GitSCM',
@@ -61,6 +62,7 @@ pipeline {
         stage('拉取编译基础镜像') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         sh "docker pull --quiet ${env.BUILD_IMAGE} || docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"    // 关闭后台输出信息，使用 --quiet 静默参数或者重定向方案
 
@@ -79,6 +81,7 @@ pipeline {
         stage('代码容器化编译及测试') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         sh """
                             docker run --rm --network=host \
@@ -151,6 +154,7 @@ pipeline {
         stage('镜像仓库认证') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         // 更安全的做法：使用 Jenkins Credentials ID
                         withCredentials([usernamePassword(
@@ -174,6 +178,7 @@ pipeline {
         stage('应用镜像构建') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         // 直接使用 Groovy 的字符串插值
                         def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
@@ -194,6 +199,7 @@ pipeline {
         stage('应用镜像上传') {
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
 
@@ -222,6 +228,7 @@ pipeline {
             }
             steps {
                 script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
                     try {
                         // 获取deployment.yaml
                         unstash 'deployment-config'
