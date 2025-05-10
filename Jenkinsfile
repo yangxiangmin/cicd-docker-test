@@ -147,7 +147,7 @@ pipeline {
         }
 
         // 阶段5： 认证阶段
-        stage('应用镜像仓库认证') {
+        stage('镜像仓库认证') {
             steps {
                 script {
                     try {
