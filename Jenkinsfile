@@ -16,7 +16,7 @@ pipeline {
         
         // 容器镜像配置
         BUILD_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/base/base_arm:1.0'
-        APP_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/http-server:${BUILD_NUMBER}'
+        //APP_IMAGE = 'dockhub.ghtchina.com:6060/ims-cloud/http-server:${BUILD_NUMBER}'
         APP_IMAGE_NO_BUILD_NUMBER = 'dockhub.ghtchina.com:6060/ims-cloud/http-server'
         
         // 构建配置
@@ -174,19 +174,15 @@ pipeline {
             steps {
                 script {
                     try {
-                        // 通过环境变量传递构建号到 Dockerfile
-                        withEnv(["BUILD_NUMBER=${env.BUILD_NUMBER}"]) {
-                            sh """
-                                # 确认 Dockerfile 存在
-                                ls -l Dockerfile
-
-                                # 明确指定 Dockerfile
-                                docker build -f Dockerfile -t ${env.APP_IMAGE} .
-                            """
-                        }
-                        echo "✅ 应用镜像构建成功！镜像标签: ${env.APP_IMAGE}"
+                        // 直接使用 Groovy 的字符串插值
+                        def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
+                        
+                        sh """
+                            ls -l Dockerfile
+                            docker build -f Dockerfile -t ${appImage} .
+                        """
+                        echo "✅ 应用镜像构建成功！镜像标签: ${appImage}"
                     } catch (Exception e) {
-                        // 失败时明确提示错误类型
                         error("❌ 应用镜像构建失败: ${e.getMessage()}")
                     }
                 }
@@ -199,8 +195,10 @@ pipeline {
                 script {
                     try {
                         sh """
-                            docker push ${env.APP_IMAGE}
-                            docker tag ${env.APP_IMAGE} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
+                            def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
+                            docker push ${appImage}
+
+                            docker tag ${appImage} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                             docker push ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
                         """
                         echo "✅ 应用镜像上传至应用镜像仓库成功！"
@@ -299,7 +297,7 @@ pipeline {
                         <p><b>构建状态:</b> <span style="color:green;">成功</span></p>
                         <p><b>构建日志:</b> <a href="${env.BUILD_URL}">查看详情</a></p>
                         <p><b>代码仓库:</b> ${env.REPO_URL}</p>
-                        <p><b>生成镜像:</b> ${env.APP_IMAGE}</p>
+                        <p><b>生成镜像:</b> ${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}</p>
                     """,
                     to: 'yangxiangmin@sina.com',
                     mimeType: 'text/html'
@@ -316,10 +314,10 @@ pipeline {
         }
 
         failure {
-            echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE}"
+            echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
         }
         success {
-            echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE}"
+            echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
         }
     }
 }
