@@ -74,7 +74,7 @@ pipeline {
             }
         }
 
-        // 阶段3: 容器化编译
+        // 阶段3: 容器化编译及测试
         stage('Containerized Compilation & Test') {
             steps {
                 script {
