@@ -194,8 +194,9 @@ pipeline {
             steps {
                 script {
                     try {
+                        def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
+                        
                         sh """
-                            def appImage = "${env.APP_IMAGE_NO_BUILD_NUMBER}:${env.BUILD_NUMBER}"
                             docker push ${appImage}
 
                             docker tag ${appImage} ${env.APP_IMAGE_NO_BUILD_NUMBER}:latest
