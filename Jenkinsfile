@@ -256,6 +256,59 @@ pipeline {
         }
     }
 
+/*
+    // 在 pipeline 的 post 部分添加邮件通知
+    post {
+        always {
+            cleanWs()
+        }
+
+        failure {
+            script {
+                echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
+            
+                // 发送失败邮件通知
+                emailext (
+                    subject: "❌ 构建失败: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+                        <p>构建失败！</p>
+                        <p><b>项目名称:</b> ${env.JOB_NAME}</p>
+                        <p><b>构建编号:</b> ${env.BUILD_NUMBER}</p>
+                        <p><b>构建状态:</b> <span style="color:red;">失败</span></p>
+                        <p><b>构建日志:</b> <a href="${env.BUILD_URL}">查看详情</a></p>
+                        <p><b>代码仓库:</b> ${env.REPO_URL}</p>
+                        <p><b>失败原因:</b> ${currentBuild.currentResult}</p>
+                    """,
+                    to: 'yangxiangmin@sina.com',
+                    mimeType: 'text/html'
+                )
+            }
+        }
+    
+        success {
+            script {
+                echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
+            
+                // 发送成功邮件通知
+                emailext (
+                    subject: "✅ 构建成功: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+                        <p>构建成功完成！</p>
+                        <p><b>项目名称:</b> ${env.JOB_NAME}</p>
+                        <p><b>构建编号:</b> ${env.BUILD_NUMBER}</p>
+                        <p><b>构建状态:</b> <span style="color:green;">成功</span></p>
+                        <p><b>构建日志:</b> <a href="${env.BUILD_URL}">查看详情</a></p>
+                        <p><b>代码仓库:</b> ${env.REPO_URL}</p>
+                        <p><b>生成镜像:</b> ${env.APP_IMAGE}</p>
+                    """,
+                    to: 'yangxiangmin@sina.com',
+                    mimeType: 'text/html'
+                )
+            }
+        }
+    }
+*/
+
     // 后置处理
     post {
         always {
@@ -263,10 +316,10 @@ pipeline {
         }
 
         failure {
-            echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
+            echo "❌ 流水线执行失败，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE}"
         }
         success {
-            echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 任务构建地址：${env.BUILD_URL} - 代码仓库地址：${env.REPO_URL}"
+            echo "✅ 流水线执行成功，任务名：${env.JOB_NAME} - 任务构建号：Build ${env.BUILD_NUMBER} - 代码仓库地址：${env.REPO_URL} - 任务构建地址：${env.BUILD_URL} - 镜像仓库及名称：${env.APP_IMAGE}"
         }
     }
 }
