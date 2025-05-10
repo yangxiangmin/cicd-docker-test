@@ -24,6 +24,7 @@ pipeline {
     }
     
     stages {
+/*
         stage('输出当前构建号') {
             steps {
                 script {
@@ -32,7 +33,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // 阶段1: 拉取源代码 (需要认证)
         stage('拉取源代码') {
             steps {
@@ -75,7 +76,7 @@ pipeline {
         }
 
         // 阶段3: 容器化编译及测试
-        stage('容器化编译及测试') {
+        stage('代码容器化编译及测试') {
             steps {
                 script {
                     try {
