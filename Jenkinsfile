@@ -24,7 +24,7 @@ pipeline {
     }
     
     stages {
-        stage('Output Current Build Number') {
+        stage('输出当前构建号') {
             steps {
                 script {
                     echo "当前构建号: ${env.BUILD_NUMBER}"
@@ -34,7 +34,7 @@ pipeline {
         }
 
         // 阶段1: 拉取源代码 (需要认证)
-        stage('Checkout Source Code') {
+        stage('拉取源代码') {
             steps {
                 script {
                     try {
@@ -55,9 +55,9 @@ pipeline {
                 }
             }
         }
-/*
+
         // 阶段2: 拉取编译环境镜像（使用 docker）
-        stage('Pull Compilation Image') {
+        stage('拉取编译基础镜像') {
             steps {
                 script {
                     try {
@@ -75,7 +75,7 @@ pipeline {
         }
 
         // 阶段3: 容器化编译及测试
-        stage('Containerized Compilation & Test') {
+        stage('容器化编译及测试') {
             steps {
                 script {
                     try {
@@ -145,9 +145,9 @@ pipeline {
                 }
             }
         }
-*/
+
         // 阶段5： 认证阶段
-        stage('Login to Registry') {
+        stage('应用镜像仓库认证') {
             steps {
                 script {
                     try {
@@ -170,7 +170,7 @@ pipeline {
         }
 
         // 阶段6: 构建应用镜像
-        stage('Building Application Image') {
+        stage('应用镜像构建') {
             steps {
                 script {
                     try {
@@ -190,7 +190,7 @@ pipeline {
         }
 
         // 阶段7: 推送镜像（使用 docker）
-        stage('Push Application Image') {
+        stage('应用镜像上传') {
             steps {
                 script {
                     try {
@@ -211,7 +211,7 @@ pipeline {
         }
         
         // 阶段8: 部署
-        stage('Deploy Application Image') {
+        stage('应用镜像部署') {
             // 指定仅在 agent-02-Deploy（目的部署节点） 节点运行
             agent {
                 label 'agent-02-Deploy'
