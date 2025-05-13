@@ -59,7 +59,7 @@ pipeline {
         }
 
         // 阶段2: 拉取编译环境镜像（使用 docker）
-/*
+
         stage('拉取编译基础镜像') {
             steps {
                 script {
@@ -77,7 +77,8 @@ pipeline {
                 }
             }
         }
-*/
+
+/*
         stage('拉取编译基础镜像') {
             steps {
                 script {
@@ -132,7 +133,7 @@ pipeline {
                 }
             }
         }
-        
+*/
         // 阶段3: 容器化编译及测试
         stage('代码容器化编译及测试') {
             steps {
