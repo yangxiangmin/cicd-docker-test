@@ -59,6 +59,7 @@ pipeline {
         }
 
         // 阶段2: 拉取编译环境镜像（使用 docker）
+/*
         stage('拉取编译基础镜像') {
             steps {
                 script {
@@ -76,7 +77,62 @@ pipeline {
                 }
             }
         }
-
+*/
+        stage('拉取编译基础镜像') {
+            steps {
+                script {
+                    echo "当前处理节点: ${env.NODE_NAME}"
+                    
+                    // 检查 Docker 是否已安装
+                    def dockerInstalled = sh(script: 'command -v docker >/dev/null 2>&1 || { echo "false"; }', returnStatus: true) == 0
+                    
+                    if (!dockerInstalled) {
+                        echo "⚠️ 节点未安装 Docker，正在尝试安装..."
+                        
+                        try {
+                            // 根据不同的 Linux 发行版安装 Docker
+                            if (sh(script: 'command -v apt-get >/dev/null 2>&1', returnStatus: true) == 0) {
+                                // Debian/Ubuntu 系统
+                                sh '''
+                                    sudo apt-get update -qq
+                                    sudo apt-get install -qq -y apt-transport-https ca-certificates curl software-properties-common
+                                    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+                                    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+                                    sudo apt-get update -qq
+                                    sudo apt-get install -qq -y docker-ce docker-ce-cli containerd.io
+                                    sudo usermod -aG docker $USER
+                                '''
+                            } else if (sh(script: 'command -v yum >/dev/null 2>&1', returnStatus: true) == 0) {
+                                // CentOS/RHEL 系统
+                                sh '''
+                                    sudo yum install -q -y yum-utils
+                                    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                                    sudo yum install -q -y docker-ce docker-ce-cli containerd.io
+                                    sudo systemctl start docker
+                                    sudo usermod -aG docker $USER
+                                '''
+                            } else {
+                                error("❌ 不支持的 Linux 发行版，无法自动安装 Docker")
+                            }
+                            
+                            echo "✅ Docker 安装完成"
+                        } catch (Exception e) {
+                            error("❌ Docker 安装失败: ${e.getMessage()}")
+                        }
+                    }
+                    
+                    // 拉取基础镜像
+                    try {
+                        echo "正在拉取基础镜像 ${env.BUILD_IMAGE}..."
+                        sh "docker pull --quiet ${env.BUILD_IMAGE} || docker pull ${env.BUILD_IMAGE} >/dev/null 2>&1"
+                        echo "✅ 基础镜像拉取成功！"
+                    } catch (Exception e) {
+                        error("❌ 基础镜像拉取失败: ${e.getMessage()}")
+                    }
+                }
+            }
+        }
+        
         // 阶段3: 容器化编译及测试
         stage('代码容器化编译及测试') {
             steps {
